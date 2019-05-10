@@ -48,14 +48,14 @@ class AvroTurf
     # Returns the encoded data as a String.
     def encode(message, schema_name: nil, namespace: @namespace, subject: nil)
       fullname = Avro::Name.make_fullname(schema_name, namespace)
-      schema = if @registry.is_a?(CachedConfluentSchemaRegistry)
+      schema_data = if @registry.is_a?(CachedConfluentSchemaRegistry)
         @registry.fetch_matched_schema(subject || fullname, message)
       else
         @registry.subject_version(subject || fullname)
       end
 
-      schema_id = schema.fetch('id')
-      schema = Avro::Schema.parse(schema.fetch('schema'))
+      schema_id = schema_data.fetch('id')
+      schema = Avro::Schema.parse(schema_data.fetch('schema'))
 
       stream = StringIO.new
       writer = Avro::IO::DatumWriter.new(schema)
