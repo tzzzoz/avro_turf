@@ -111,6 +111,8 @@ class AvroTurf
 
       reader = Avro::IO::DatumReader.new(writers_schema, readers_schema)
       reader.read(decoder)
+    rescue Excon::Error::NotFound
+      raise SchemaNotFoundError
     end
   end
 end
