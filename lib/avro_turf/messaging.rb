@@ -54,6 +54,7 @@ class AvroTurf
         @registry.subject_version(subject || fullname)
       end
 
+      raise SchemaNotFoundError unless schema_data
       schema_id = schema_data.fetch('id')
       schema = Avro::Schema.parse(schema_data.fetch('schema'))
 
@@ -71,6 +72,8 @@ class AvroTurf
       writer.write(message, encoder)
 
       stream.string
+    rescue Excon::Error::NotFound
+      raise SchemaNotFoundError
     end
 
     # Decodes data into the original message.

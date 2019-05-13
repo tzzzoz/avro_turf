@@ -47,9 +47,8 @@ class AvroTurf::CachedConfluentSchemaRegistry
   end
 
   def load_all_versions(subject)
-    schemas = []
-    @upstream.subject_versions(subject).sort.reverse.map do |version|
-      schemas << @upstream.subject_version(subject, version)
+    schemas = @upstream.subject_versions(subject).sort.reverse.map do |version|
+      @upstream.subject_version(subject, version)
     end
     @cache.store_by_subject(subject, schemas)
   end
