@@ -40,20 +40,20 @@ describe AvroTurf::Messaging do
 
   shared_examples_for "encoding and decoding" do
     it "encodes and decodes messages" do
-      data = avro.encode(message, schema_name: "person")
-      expect(avro.decode(data)).to eq message
+      data = avro.encode(message, schema_name: "person", version: 1)
+      expect(avro.decode(data, schema_name: 'person')).to eq message
     end
 
     it "allows specifying a reader's schema" do
-      data = avro.encode(message, schema_name: "person")
-      expect(avro.decode(data, schema_name: "person")).to eq message
+      data = avro.encode(message, schema_name: "person", version: 1)
+      expect(avro.decode(data, schema_name: "person", readers_schema_name: 'person')).to eq message
     end
 
     it "caches parsed schemas for decoding" do
-      data = avro.encode(message, schema_name: "person")
-      avro.decode(data)
+      data = avro.encode(message, schema_name: "person", version: 1)
+      avro.decode(data, schema_name: 'person')
       allow(Avro::Schema).to receive(:parse).and_call_original
-      expect(avro.decode(data)).to eq message
+      expect(avro.decode(data, schema_name: 'person')).to eq message
       expect(Avro::Schema).not_to have_received(:parse)
     end
   end
@@ -73,15 +73,15 @@ describe AvroTurf::Messaging do
     it "uses the provided registry" do
       allow(registry).to receive(:subject_version).and_call_original
       message = { "full_name" => "John Doe" }
-      avro.encode(message, schema_name: "person")
-      expect(registry).to have_received(:subject_version).with('person')
+      avro.encode(message, schema_name: "person", version: 1)
+      expect(registry).to have_received(:subject_version).with('person', 1)
     end
 
     it "allows specifying a schema registry subject" do
       allow(registry).to receive(:subject_version).and_call_original
       message = { "full_name" => "John Doe" }
-      avro.encode(message, schema_name: 'person', subject: 'people')
-      expect(registry).to have_received(:subject_version).with('people')
+      avro.encode(message, schema_name: 'person', subject: 'people', version: 1)
+      expect(registry).to have_received(:subject_version).with('people', 1)
     end
   end
 end
