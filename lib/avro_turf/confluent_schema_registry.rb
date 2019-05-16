@@ -99,8 +99,8 @@ class AvroTurf::ConfluentSchemaRegistry
   end
 
   def request(path, **options)
-    options = { expects: 200 }.merge!(options)
-    response = @connection.request(path: path, **options)
+    options = { path: path, expects: 200 }.merge!(options)
+    response = @connection.request(options)
     JSON.parse(response.body)
   end
 end
