@@ -49,6 +49,11 @@ describe AvroTurf::Messaging do
       expect(avro.decode(data, schema_name: 'person', schema_version: 1)).to eq message
     end
 
+    it 'raises ArgumentError on schema_version without schema_name when decoding' do
+      data = avro.encode(message, schema_name: "person", version: 1)
+      expect { avro.decode(data, schema_version: 1) }.to raise_error(ArgumentError)
+    end
+
     it "caches parsed schemas for decoding" do
       data = avro.encode(message, schema_name: "person", version: 1)
       avro.decode(data)

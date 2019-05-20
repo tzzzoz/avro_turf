@@ -79,13 +79,19 @@ class AvroTurf
 
     # Decodes data into the original message.
     #
-    # data        - A String containing encoded data.
-    # schema_name - The String name of the schema that should be used to decode
+    # data           - A String containing encoded data.
+    # schema_name    - The String name of the schema that should be used to decode
     #               the data. Must match the schema used when encoding (optional).
-    # namespace   - The namespace of the schema (optional).
+    #               schema_name is required when schema_version is provided.
+    # schema_version - The integer version of the scehma that should be used to decode
+    #               the data. Must match the schema used when encoding (optional).
+    # namespace      - The namespace of the schema (optional).
     #
     # Returns the decoded message.
     def decode(data, schema_name: nil, schema_version: nil, namespace: @namespace)
+      raise ArgumentError.new(
+        'schema_name required when schema_version is available'
+      ) if schema_name.nil? && !schema_version.nil?
       readers_schema = if schema_name
         schema_version ||= :latest
         fetch_schema_from_cache(schema_name, schema_version, namespace)
