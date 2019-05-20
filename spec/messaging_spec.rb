@@ -41,19 +41,19 @@ describe AvroTurf::Messaging do
   shared_examples_for "encoding and decoding" do
     it "encodes and decodes messages" do
       data = avro.encode(message, schema_name: "person", version: 1)
-      expect(avro.decode(data, schema_name: 'person')).to eq message
+      expect(avro.decode(data)).to eq message
     end
 
     it "allows specifying a reader's schema" do
       data = avro.encode(message, schema_name: "person", version: 1)
-      expect(avro.decode(data, schema_name: "person", readers_schema_name: 'person')).to eq message
+      expect(avro.decode(data, schema_name: 'person', schema_version: 1)).to eq message
     end
 
     it "caches parsed schemas for decoding" do
       data = avro.encode(message, schema_name: "person", version: 1)
-      avro.decode(data, schema_name: 'person')
+      avro.decode(data)
       allow(Avro::Schema).to receive(:parse).and_call_original
-      expect(avro.decode(data, schema_name: 'person')).to eq message
+      expect(avro.decode(data)).to eq message
       expect(Avro::Schema).not_to have_received(:parse)
     end
   end

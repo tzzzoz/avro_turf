@@ -32,6 +32,7 @@ class AvroTurf
       @logger = logger || Logger.new($stderr)
       @namespace = namespace
       @registry = registry || CachedConfluentSchemaRegistry.new(ConfluentSchemaRegistry.new(registry_url, logger: @logger))
+      @schemas_by_id = {}
       @schemas_by_version = {}
     end
 
@@ -55,6 +56,7 @@ class AvroTurf
       end
 
       raise SchemaNotFoundError unless schema_data
+      schema_id = schema_data.fetch('id')
       schema = Avro::Schema.parse(schema_data.fetch('schema'))
 
       stream = StringIO.new
@@ -64,8 +66,8 @@ class AvroTurf
       # Always start with the magic byte.
       encoder.write(MAGIC_BYTE)
 
-      # The version is encoded as a 4-byte big-endian integer.
-      encoder.write([version].pack("N"))
+      # The schema id is encoded as a 4-byte big-endian integer.
+      encoder.write([schema_id].pack('N'))
 
       # The actual message comes last.
       writer.write(message, encoder)
@@ -83,10 +85,10 @@ class AvroTurf
     # namespace   - The namespace of the schema (optional).
     #
     # Returns the decoded message.
-    def decode(data, schema_name:, namespace: @namespace, readers_schema_name: nil, readers_schema_version: nil)
-      readers_schema = if readers_schema_name
-        readers_schema_version ||= :latest
-        fetch_schema_from_cache(readers_schema_name, readers_schema_version, namespace)
+    def decode(data, schema_name: nil, schema_version: nil, namespace: @namespace)
+      readers_schema = if schema_name
+        schema_version ||= :latest
+        fetch_schema_from_cache(schema_name, schema_version, namespace)
       end
 
       stream = StringIO.new(data)
@@ -99,10 +101,13 @@ class AvroTurf
         raise "Expected data to begin with a magic byte, got `#{magic_byte.inspect}`"
       end
 
-      # The version is a 4-byte big-endian integer.
-      version = decoder.read(4).unpack("N").first
+      # The schema id is a 4-byte big-endian integer.
+      schema_id = decoder.read(4).unpack1('N')
 
-      writers_schema = fetch_schema_from_cache(schema_name, version, namespace)
+      writers_schema = @schemas_by_id.fetch(schema_id) do
+        schema_json = @registry.fetch(schema_id)
+        @schemas_by_id[schema_id] = Avro::Schema.parse(schema_json)
+      end
 
       reader = Avro::IO::DatumReader.new(writers_schema, readers_schema)
       reader.read(decoder)
